@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       // restorationScopeId: "tds android util",
       title: 'TDSSS android util',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
         fontFamily: "mi"
       ),

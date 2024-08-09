@@ -2,16 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tds_android_util/common/path_util.dart';
 import 'package:tds_android_util/model/android_device.dart';
 import 'package:tds_android_util/page/home/dialog/add_sign_info_dialog.dart';
 import 'package:tds_android_util/page/home/dialog/build_aab_dialog.dart';
 import 'package:tds_android_util/page/home/dialog/copy_file_dialog.dart';
-import 'package:tds_android_util/page/home/dialog/qr_dialog.dart';
 import 'package:tds_android_util/page/home/drop_file_dialog.dart';
 import 'package:tds_android_util/page/home/text_field_dialog.dart';
-import 'package:tds_android_util/widget/dialog_base.dart';
 
 import '../../common/command_util.dart';
 import '../../common/regex_util.dart';
@@ -42,37 +39,30 @@ class HomeLogic extends GetxController {
     super.onClose();
   }
 
-  List<String> get menuString => ["获取设备列表","手动无线连接","无线连接设备","复制文件到手机","安装apk","安装aab","预设签名信息","test"];
+  List<String> get menuString => [
+    "获取设备列表", "手动无线连接", "无线连接设备",
+    "复制文件到手机","安装apk","安装aab",
+    "预设签名信息","自定义命令"
+  ];
   Future<CommandResult?> menuLogic(int index)async {
     CommandResult? res;
     switch (index) {
-      case 0 :
+      case 0 : //获取设备列表
         res = await _getDevicesInfo();
-      case 1:
-        String connectIp = "";
-        await SmartDialog.show(builder: (_)=> TextFieldDialog(onTextChanged: (ip)async{
-          connectIp = ip;
-        }));
-        res = await CommandUtils.runCommand(getAdbPath(), ["connect",connectIp]);
-      case 2:
-        if(state.currentDevice.value.isUnknown) return null;
-        if(state.currentDevice.value.ip == null){
-          SmartDialog.showToast("ip未知");
-          return null;
-        }
-        res = await CommandUtils.runCommand(getAdbPath(), ["connect",state.currentDevice.value.ip!]);
-        if(res.outString.contains("cannot connect")){
-          print("cannot connect");
-          SmartDialog.showToast("默认连接失败，尝试启动adbd重连");
-          res = await CommandUtils.runAdbOfDevice(["tcpip","5555"],state.currentDevice.value.name);
-          print(res);
-          res = await CommandUtils.runCommand(getAdbPath(), ["connect",state.currentDevice.value.ip!]);
-          if(res.exitCode == 0) SmartDialog.showToast("连接成功！");
-          res = await _getDevicesInfo();
-        }
-      case 3:
+      case 1: //手动无线连接
+        res = await _ipConnect();
+        if(res == null) return null;
+        if(res.exitCode == 0 && !res.outString.contains("empty")) SmartDialog.showToast("连接成功！");
+        await Future.delayed(const Duration(seconds: 1));
+        _getDevicesInfo();
+      case 2: //无线连接设备
+        res = await _wifiConnect();
+        if(res?.exitCode == 0) SmartDialog.showToast("连接成功！");
+        await Future.delayed(const Duration(seconds: 1));
+        _getDevicesInfo();
+      case 3: //复制文件到手机
         SmartDialog.show(builder: (_) => CopyFileDialog(deviceName: state.currentDevice.value.name));
-      case 4:
+      case 4: //安装apk
         SmartDialog.show(builder: (_)=>
             DropFileDialog(onSave: (isCopy,path)async{
               print("isCopy : $isCopy,path : $path");
@@ -101,14 +91,21 @@ class HomeLogic extends GetxController {
               },
             )
         );
-      case 5:
-        res = await SmartDialog.show(builder: (_)=>BuildAabDialog(device: state.currentDevice.value,signInfoList: state.signInfoList,));
-      case 6:
-        res = await SmartDialog.show(builder: (_)=>AddSignInfoDialog());
+      case 5: //安装aab
+        res = await SmartDialog.show(builder: (_)=>BuildAabDialog(device: state.currentDevice.value,signInfoList: state.signInfoList));
+      case 6: //预设签名信息
+        res = await SmartDialog.show(builder: (_)=>const AddSignInfoDialog());
         _loadSignInfo();
-      case 7:
-        // res = await CommandUtils.runCommand(getAdbPath(), ["shell","getprop"]);
-        // SmartDialog.show(builder: (context) => QrDialog());
+      case 7: //自定义命令
+        String cmdStr = "";
+        await SmartDialog.show(builder: (_)=> TextFieldDialog(
+          onTextChanged: (s) => cmdStr = s,
+          defaultStr: cmdStr,
+        ));
+        if(cmdStr == "") return null;
+        var command = cmdStr.split(' ');
+        res = await CommandUtils.runCommand(getAdbPath(), command);
+        
     }
     if(res != null) {
       state.currentResult.value = res;
@@ -134,6 +131,13 @@ class HomeLogic extends GetxController {
     if(state.devices.isNotEmpty) state.devices.refresh();
     state.currentDevice.value = AndroidDevice.init();
     state.selectedIndex.value = -1;
+
+    //如果有设备，默认选中第一条
+    if(state.devices.isNotEmpty){
+      state.selectedIndex.value = 0;
+      state.currentDevice.value = state.devices[0];
+    }
+
     return res;
   }
 
@@ -155,6 +159,7 @@ class HomeLogic extends GetxController {
     }
   }
 
+  ///解析设备IP
   void _resolveIp(){
     if(state.devices.isEmpty)return;
     for (int i = 0; i < state.devices.length; i++) {
@@ -166,28 +171,6 @@ class HomeLogic extends GetxController {
       String nameIp = RegexUtil.matchIp(state.devices[i].name)[0];
       state.devices[i].isWifiConnected = nameIp == state.devices[i].ip;
     }
-    // if(state.devices.length == 1 && !state.devices[0].isWifiConnected){
-    //   final ipRes = CommandUtils.getDeviceIp();
-    //   print("ip ipRes : $ipRes");
-    //   state.devices[0].ip = RegexUtil.matchAdbIp(ipRes.outString);
-    //
-    //   final list = RegexUtil.matchIp(state.devices[0].name);
-    //   print("ip list : $list");
-    //   if(list.isEmpty) return;
-    //
-    //   String nameIp = RegexUtil.matchIp(state.currentDevice.value.name)[0];
-    //   state.currentDevice.value.isWifiConnected = nameIp == state.currentDevice.value.ip;
-    // }else{
-    //   for (int i = 0; i < state.devices.length; i++) {
-    //     if(state.devices[i].isWifiConnected) continue;
-    //     final ipRes = CommandUtils.getDeviceIp(deviceName: state.devices[i].name);
-    //     state.devices[i].ip = RegexUtil.matchAdbIp(ipRes.outString);
-    //     final list = RegexUtil.matchIp(state.devices[i].name);
-    //     if(list.isEmpty) continue;
-    //     String nameIp = RegexUtil.matchIp(state.devices[i].name)[0];
-    //     state.devices[i].isWifiConnected = nameIp == state.devices[i].ip;
-    //   }
-    // }
   }
 
 
@@ -201,4 +184,38 @@ class HomeLogic extends GetxController {
     }
     print("sign list: ${state.signInfoList}");
   }
+
+  Future<CommandResult?> _ipConnect()async{
+    String connectIp = "";
+    String lastIp = state.sp.getString(SPKey.stringIp) ?? "192.168.";
+    await SmartDialog.show(builder: (_)=> TextFieldDialog(
+        onTextChanged: (ip)async{
+      connectIp = ip;
+    },
+      defaultStr: lastIp,
+    ));
+    if(connectIp == "") return null;
+    state.sp.setString(SPKey.stringIp, connectIp);
+    return CommandUtils.runCommand(getAdbPath(), ["connect",connectIp]);
+  }
+
+  Future<CommandResult?> _wifiConnect()async{
+    CommandResult res;
+    if(state.currentDevice.value.isUnknown) return null;
+    if(state.currentDevice.value.ip == null){
+      SmartDialog.showToast("ip未知");
+      return null;
+    }
+    res = await CommandUtils.runCommand(getAdbPath(), ["connect",state.currentDevice.value.ip!]);
+    if(res.outString.contains("cannot connect")){
+      print("cannot connect");
+      SmartDialog.showToast("默认连接失败，尝试启动adbd重连");
+      res = await CommandUtils.runAdbOfDevice(["tcpip","5555"],state.currentDevice.value.name);
+      print(res);
+      res = await CommandUtils.runCommand(getAdbPath(), ["connect",state.currentDevice.value.ip!]);
+      return res;
+    }
+    return null;
+  }
+
 }

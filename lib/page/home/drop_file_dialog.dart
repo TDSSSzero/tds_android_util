@@ -3,6 +3,7 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:tds_android_util/function.dart';
+import 'package:tds_android_util/widget/dialog_base.dart';
 
 class DropFileDialog extends StatefulWidget {
 
@@ -25,11 +26,7 @@ class _DropFileDialogState extends State<DropFileDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-        width: 600,
-        height: 600,
-        alignment: Alignment.center,
-        color: Colors.white,
+    return DialogBase(
         child:
         Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -44,6 +41,9 @@ class _DropFileDialogState extends State<DropFileDialog> {
                 final xFile = XFile(result.files.single.path!);
                 _list.add(xFile);
                 print("file : ${xFile.path}");
+                if(_list.isNotEmpty){
+                  selectedIndex = 0;
+                }
                 setState(() {});
               } else {
                 // User canceled the picker
@@ -60,6 +60,9 @@ class _DropFileDialogState extends State<DropFileDialog> {
                     print("type : $type");
                     if(type == "apk"){
                       _list.add(file);
+                    }
+                    if(_list.isNotEmpty){
+                      selectedIndex = 0;
                     }
                   }
                 }

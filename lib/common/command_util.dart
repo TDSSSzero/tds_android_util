@@ -13,6 +13,7 @@ abstract class CommandUtils {
   static const getDeviceModel = ["shell","getprop","ro.product.model"];
   static const getDeviceMarketName = ["shell","getprop","ro.product.marketname"];
 
+  ///获取当前adb连接的所有设备
   static CommandResult getDevices(){
     var result = Process.runSync(getAdbPath(), ['devices']);
     var cr = CommandResult.fromResult(result,"adb devices");

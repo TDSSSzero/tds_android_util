@@ -4,8 +4,9 @@ class SignInfo {
   String alias;
   String storePassword;
   String keyPassword;
+  String? infoName;
 
-  SignInfo(this.filePath, this.alias, this.storePassword, this.keyPassword);
+  SignInfo(this.filePath, this.alias, this.storePassword, this.keyPassword,this.infoName);
 
   // toJson方法：将对象转换为JSON
   Map<String, dynamic> toJson() => {
@@ -13,6 +14,7 @@ class SignInfo {
     'alias': alias,
     'storePassword': storePassword,
     'keyPassword': keyPassword,
+    'infoName': infoName,
   };
 
   // 工厂方法fromJson：从JSON创建对象
@@ -22,6 +24,7 @@ class SignInfo {
       json['alias'] as String,
       json['storePassword'] as String,
       json['keyPassword'] as String,
+      json['infoName'] as String?
     );
   }
 
@@ -33,6 +36,7 @@ class SignInfo {
           runtimeType == other.runtimeType &&
           alias == other.alias &&
           storePassword == other.storePassword &&
+          infoName == other.infoName &&
           keyPassword == other.keyPassword;
 
   @override
@@ -41,6 +45,9 @@ class SignInfo {
 
   @override
   String toString() {
-    return 'SignInfo{  alias: $alias, storePassword: $storePassword, keyPassword: $keyPassword,\n filePath: $filePath}\n';
+    return 'SignInfo{  alias: $alias, storePassword: $storePassword,'
+        ' keyPassword: $keyPassword,\n'
+        ' infoName: $infoName,\n'
+        ' filePath: $filePath}\n';
   }
 }

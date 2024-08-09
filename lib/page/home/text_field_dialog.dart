@@ -6,8 +6,13 @@ import 'package:tds_android_util/widget/dialog_base.dart';
 class TextFieldDialog extends StatefulWidget {
 
   final SingleCallback<String> onTextChanged;
+  final String? defaultStr;
 
-  const TextFieldDialog({super.key,required this.onTextChanged});
+  const TextFieldDialog({
+    super.key,
+    required this.onTextChanged,
+    this.defaultStr
+  });
 
   @override
   State<TextFieldDialog> createState() => _TextFieldDialogState();
@@ -16,6 +21,14 @@ class TextFieldDialog extends StatefulWidget {
 class _TextFieldDialogState extends State<TextFieldDialog> {
 
   String str = "";
+  late final TextEditingController ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    ctrl = TextEditingController(text: widget.defaultStr);
+    str = widget.defaultStr ?? "";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +39,7 @@ class _TextFieldDialogState extends State<TextFieldDialog> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 50.0),
             child: TextField(
+              controller: ctrl,
               onChanged: (s){
                 str = s;
                 setState(() {
@@ -46,7 +60,7 @@ class _TextFieldDialogState extends State<TextFieldDialog> {
               widget.onTextChanged(str);
               SmartDialog.dismiss();
             }
-          }, child: const Text("连接"))
+          }, child: const Text("提交"))
         ],
       ),
     );
