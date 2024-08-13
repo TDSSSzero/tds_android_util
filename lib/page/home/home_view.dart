@@ -157,7 +157,7 @@ class HomePage extends StatelessWidget {
             ),
             title: Text(
                 "$indexResStr : $resStr ${res.errorString != "" ? "失败原因（可能是警告，只要执行结果是成功就行）: ${res.errorString?.trim()}" : ""} [结果end]"),
-            subtitle: Text("command : '${res.command}",style: const TextStyle(fontWeight: FontWeight.bold),),
+            subtitle: Text("command : '${res.command}'",style: const TextStyle(fontWeight: FontWeight.bold),),
           ),
         ),
       ],
@@ -166,16 +166,14 @@ class HomePage extends StatelessWidget {
 
   Widget _buildMenuItem(BuildContext context, int index) {
     if (index == 0 || index == 1 || index == 6 || index == 7) {
-      return InkWell(
-        mouseCursor: MaterialStateMouseCursor.clickable,
-        onTap: () => logic.menuLogic(index),
-        child: Container(
-          // padding: const EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(20)),
-              border: Border.all(color: Colors.lightGreen)),
-          child: Center(child: Text(logic.menuString[index],textAlign: TextAlign.center,)),
-        ),
+      return Container(
+        decoration: BoxDecoration(
+            borderRadius: const BorderRadius.all(Radius.circular(20)),
+            border: Border.all(color: Colors.lightGreen)),
+        child: InkWell(
+            mouseCursor: MaterialStateMouseCursor.clickable,
+            onTap: () => logic.menuLogic(index),
+            child: Center(child: Text(logic.menuString[index],textAlign: TextAlign.center))),
       );
     } else {
       return _buildDeviceItem(index);
