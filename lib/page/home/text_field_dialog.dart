@@ -22,6 +22,7 @@ class _TextFieldDialogState extends State<TextFieldDialog> {
 
   String str = "";
   late final TextEditingController ctrl;
+  bool isChanged = false;
 
   @override
   void initState() {
@@ -41,13 +42,14 @@ class _TextFieldDialogState extends State<TextFieldDialog> {
             child: TextField(
               controller: ctrl,
               onChanged: (s){
+                isChanged = true;
                 str = s;
                 setState(() {
 
                 });
               },
               onEditingComplete: (){
-                if(str != ""){
+                if(str != "" && isChanged){
                   widget.onTextChanged(str);
                   SmartDialog.dismiss();
                 }
@@ -55,12 +57,18 @@ class _TextFieldDialogState extends State<TextFieldDialog> {
             ),
           ),
           const SizedBox(height: 100),
-          ElevatedButton(onPressed: (){
-            if(str != ""){
-              widget.onTextChanged(str);
-              SmartDialog.dismiss();
-            }
-          }, child: const Text("提交"))
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(onPressed: (){
+                if(str != ""){
+                  widget.onTextChanged(str);
+                  SmartDialog.dismiss();
+                }
+              }, child: const Text("提交")),
+              ElevatedButton(onPressed: () => SmartDialog.dismiss(), child: const Text("取消")),
+            ],
+          )
         ],
       ),
     );

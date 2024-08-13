@@ -45,11 +45,16 @@ class _InstallApkDialogState extends State<InstallApkDialog> {
           if(res.outString.contains("Success")){
             print("install success");
             var apkInfo = await CommandUtils.getApkInfo(path);
-            print("apkInfo $apkInfo");
-            final launchAppRes = await CommandUtils.launchApplication(widget.deviceName, apkInfo.packageName!,launchActivityName: apkInfo.launchActivity);
-            resList.add(launchAppRes);
+            if(apkInfo == null){
+              final launchAppRes = CommandResult(exitCode: CommandResultCode.error, outString: "",errorString: "出错",command: "aapt dump badging $path");
+              resList.add(launchAppRes);
+            }else{
+              print("apkInfo $apkInfo");
+              final launchAppRes = await CommandUtils.launchApplication(widget.deviceName, apkInfo.packageName!,launchActivityName: apkInfo.launchActivity);
+              resList.add(launchAppRes);
+            }
           }else{
-            final launchAppRes = CommandResult(exitCode: 1, outString: "",errorString: "出错",command: "aapt dump badging $path");
+            final launchAppRes = CommandResult(exitCode: CommandResultCode.error, outString: "",errorString: "出错",command: "aapt dump badging $path");
             resList.add(launchAppRes);
           }
           widget.onInstallOpen(resList);

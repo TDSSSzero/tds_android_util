@@ -1,5 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:tds_android_util/common/config.dart';
 import 'package:tds_android_util/model/command_result.dart';
 import 'home_logic.dart';
 
@@ -9,10 +14,9 @@ class HomePage extends StatelessWidget {
   final logic = Get.put(HomeLogic());
   final state = Get.find<HomeLogic>().state;
 
-  bool get isSuccess => state.currentResult.value.exitCode == 0;
+  bool get isSuccess => state.currentResult.value.isSuccess;
 
-  bool get isHaveResult =>
-      state.currentResult.value.exitCode != CommandResult.defaultCode;
+  bool get isHaveResult => state.results.isNotEmpty;
 
   static const logTitle = "日志信息";
   static const notice = "注：文件路径中不要包含空格";
@@ -22,7 +26,6 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // DrawableLayerWidget(drawableLayers: [Sky(), Sun()]),
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -54,12 +57,7 @@ class HomePage extends StatelessWidget {
                           child: Container(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 30.0),
-                              child:
-                                  // ListView.builder(
-                                  //   itemCount: logic.menuString.length,
-                                  //   itemBuilder: _buildMenuItem,
-                                  // ),
-                                  GridView.builder(
+                              child: GridView.builder(
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
                                         crossAxisCount: 3,
@@ -71,22 +69,38 @@ class HomePage extends StatelessWidget {
                     ],
                   ),
                 ),
-                // const Divider(),
-                const Text(notice,
-                    style: TextStyle(color: Colors.red, fontSize: 22)),
+                const SizedBox(height: 10),
                 Expanded(
-                    flex: 2,
+                    flex: 3,
                     child: Container(
+                      padding: const EdgeInsets.all(5),
                       width: MediaQuery.of(context).size.width,
                       decoration: BoxDecoration(
                           color: Theme.of(context).canvasColor,
                           border:
                               Border.all(color: Theme.of(context).dividerColor),
                           borderRadius: BorderRadius.circular(20)),
-                      child: Obx(() => isHaveResult
-                          ? _buildResultInfo()
-                          : const Center(child: Text(logTitle, style: TextStyle(fontSize: 22)))),
-                    ))
+                      child: Row(
+                        children: [
+                          IconButton(
+                              onPressed: () {
+                                state.currentResult.value =
+                                    CommandResult.init();
+                                state.results.clear();
+                              },
+                              icon: const Icon(Icons.delete_forever_rounded),
+                              color: Colors.red),
+                          Expanded(
+                              child: Obx(() => isHaveResult
+                                  ? _buildResultInfo()
+                                  : const Center(
+                                      child: Text(logTitle,
+                                          style: TextStyle(fontSize: 22))))),
+                          const SizedBox(),
+                        ],
+                      ),
+                    )),
+                const Text("version : ${Config.version}")
               ],
             ),
           )
@@ -101,23 +115,52 @@ class HomePage extends StatelessWidget {
         return Column(
           children: [
             const Text(logTitle, style: TextStyle(fontSize: 22)),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Text("命令执行结果："),
-              isSuccess
-                  ? const Text("成功", style: TextStyle(color: Colors.green))
-                  : const Text("失败", style: TextStyle(color: Colors.red))
-            ]),
-            Center(
-                child: Text(
-                    "结果 ： ${state.currentResult.value.outString} [结果end]")),
-            state.currentResult.value.errorString != ""
-                ? Center(
-                    child: Text(
-                        "失败原因（可能是警告，只要执行结果是成功就行）: ${state.currentResult.value.errorString}"))
-                : const SizedBox()
+            Text('当前已执行${state.results.length}条命令,单击复制命令'),
+            const Divider(color: Colors.black,),
+            _buildCommandRes(state.currentResult.value),
+            const Divider(color: Colors.black,),
+            const Text("全部命令："),
+            ListView.separated(
+              itemCount: state.results.length,
+              shrinkWrap: true,
+              itemBuilder: (context, index) => Center(
+                child: _buildCommandRes(state.results[index], index),
+              ),
+              separatorBuilder: (BuildContext context, int index) =>
+                  const Divider(),
+            )
           ],
         );
       }),
+    );
+  }
+
+  Widget _buildCommandRes(CommandResult res, [int index = -1]) {
+    String indexResStr = index == -1 ? "最后命令执行res" : "第${index + 1}条命令执行res ";
+    String indexStr = index == -1 ? "最后命令 :" : "第${index + 1}条命令 : ";
+    String resStr = res.outString.trim();
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Material(
+          child: ListTile(
+            onTap: () => _toClipboard(res.command),
+            leading: RichText(
+              text: TextSpan(text: "$indexStr ",style: const TextStyle(color: Colors.black,fontSize: 16), children: [
+                res.isSuccess
+                    ? const TextSpan(
+                        text: "成功\n", style: TextStyle(color: Colors.green))
+                    : const TextSpan(
+                        text: "失败\n", style: TextStyle(color: Colors.red))
+              ]),
+            ),
+            title: Text(
+                "$indexResStr : $resStr ${res.errorString != "" ? "失败原因（可能是警告，只要执行结果是成功就行）: ${res.errorString?.trim()}" : ""} [结果end]"),
+            subtitle: Text("command : '${res.command}",style: const TextStyle(fontWeight: FontWeight.bold),),
+          ),
+        ),
+      ],
     );
   }
 
@@ -131,7 +174,7 @@ class HomePage extends StatelessWidget {
           decoration: BoxDecoration(
               borderRadius: const BorderRadius.all(Radius.circular(20)),
               border: Border.all(color: Colors.lightGreen)),
-          child: Center(child: Text(logic.menuString[index])),
+          child: Center(child: Text(logic.menuString[index],textAlign: TextAlign.center,)),
         ),
       );
     } else {
@@ -230,5 +273,10 @@ class HomePage extends StatelessWidget {
         // RadioListTile(value: 1, groupValue: state.selectedIndex.value, onChanged: (v)=>state.selectedIndex.value = v ?? -1),
       ];
     }
+  }
+
+  void _toClipboard(String data) {
+    Clipboard.setData(ClipboardData(text: data));
+    SmartDialog.showToast('复制命令成功！');
   }
 }

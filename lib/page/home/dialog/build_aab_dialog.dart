@@ -58,7 +58,7 @@ class _BuildAabDialogState extends State<BuildAabDialog> {
             dropdownMenuEntries:
                 List.generate(
                     widget.signInfoList.length,
-                        (index) => DropdownMenuEntry(value: index, label: widget.signInfoList[index].alias,)
+                        (index) => DropdownMenuEntry(value: index, label: widget.signInfoList[index].infoName ?? widget.signInfoList[index].alias,)
                 ),
               onSelected: (selectedIndex){
                   dropIndex = selectedIndex ?? -1;
@@ -216,7 +216,7 @@ class _BuildAabDialogState extends State<BuildAabDialog> {
       );
     }else{
       SmartDialog.showToast("参数有误");
-      return null;
+      return CommandResult(exitCode: CommandResultCode.error, errorString: "参数有误", command: "command", outString: '');
     }
   }
 
@@ -274,10 +274,6 @@ class _BuildAabDialogState extends State<BuildAabDialog> {
     SmartDialog.dismiss(status: SmartStatus.loading);
     SmartDialog.dismiss(status: SmartStatus.dialog,result: res);
     showFinishToast();
-  }
-
-  void _buildInstallOpen() async{
-
   }
 
 }

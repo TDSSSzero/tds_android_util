@@ -6,6 +6,8 @@ import 'package:tds_android_util/common/path_util.dart';
 import 'package:tds_android_util/common/regex_util.dart';
 import 'package:tds_android_util/model/apk_info.dart';
 import 'package:tds_android_util/model/command_result.dart';
+import 'package:tds_android_util/utils/file_util.dart';
+import 'package:path/path.dart' as p;
 
 /// author TDSSS
 abstract class CommandUtils {
@@ -38,8 +40,11 @@ abstract class CommandUtils {
     var list = ["-s",deviceName];
     list.addAll(command);
     var result = await Process.run(getAdbPath(), list);
-    print("result: ${CommandResult.fromResult(result,"adb $command")}");
-    return CommandResult.fromResult(result,"adb $command");
+    StringBuffer commandStr = StringBuffer();
+    commandStr.writeAll(list," ");
+    CommandResult commandResult = CommandResult.fromResult(result,"adb $commandStr");
+    print("result: $commandResult");
+    return commandResult;
   }
 
   static Future<Process> startAdbOfDevice(List<String> command,String deviceName)async{
@@ -65,7 +70,22 @@ abstract class CommandUtils {
     return cr;
   }
 
-  static Future<ApkInfo> getApkInfo(String apkPath)async{
+  static Future<ApkInfo?> getApkInfo(String apkPath)async{
+    if(containsNonASCII(apkPath)){
+      print("包含特殊字符");
+      final tempPath = await getTempPath();
+      final tempApkPath = p.join(tempPath,p.basename(apkPath));
+      bool isExists = File(tempApkPath).existsSync();
+      if(!isExists){
+        bool isCopy = await FileUtil.copyTo(apkPath, tempApkPath);
+        if(!isCopy){
+          return null;
+        }
+        isExists = true;
+      }
+      apkPath = tempApkPath;
+    }
+    print("get apkinfo path : $apkPath");
     var result = await Process.run(getAaptPath(), ["dump","badging",apkPath],stdoutEncoding: utf8,stderrEncoding: utf8);
     final resOut = result.stdout;
     print("res : ${result.stdout}");

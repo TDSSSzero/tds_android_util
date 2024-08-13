@@ -1,12 +1,17 @@
 import 'dart:io';
 
 /// author TDSSS
-class CommandResult {
-  static const defaultCode = -111;
-  static const success = 0;
-  static const error = 1;
 
-  int exitCode = defaultCode;
+enum CommandResultCode{
+  defaultCode(-111),
+  success(0),
+  error(1),
+  ;
+  final int code;
+  const CommandResultCode(this.code);
+}
+class CommandResult {
+  CommandResultCode exitCode = CommandResultCode.defaultCode;
   String command = "";
   String outString = "";
   String? errorString;
@@ -16,15 +21,23 @@ class CommandResult {
   CommandResult.init();
 
   factory CommandResult.fromResult(ProcessResult result,String command){
+    CommandResultCode code = CommandResultCode.defaultCode;
+    switch(result.exitCode)
+    {
+      case 0:
+        code = CommandResultCode.success;
+      case 1:
+        code = CommandResultCode.error;
+    }
     return CommandResult(
-      exitCode: result.exitCode,
+      exitCode: code,
       outString: result.stdout,
       errorString: result.stderr,
       command: command
     );
   }
 
-  bool get isSuccess => exitCode == success;
+  bool get isSuccess => exitCode == CommandResultCode.success;
 
   @override
   String toString() {

@@ -40,61 +40,43 @@ class HomeLogic extends GetxController {
   }
 
   List<String> get menuString => [
-    "获取设备列表", "手动无线连接", "无线连接设备",
+    "获取设备列表", "主动ip无线连接\n（需连接过一次）", "无线连接设备",
     "复制文件到手机","安装apk","安装aab",
     "预设签名信息","自定义命令"
+    // ,"test"
   ];
-  Future<CommandResult?> menuLogic(int index)async {
-    CommandResult? res;
+  menuLogic(int index)async {
+    CommandResult res;
     switch (index) {
       case 0 : //获取设备列表
         res = await _getDevicesInfo();
+        state.currentResult.value = res;
+        state.results.add(res);
       case 1: //手动无线连接
         res = await _ipConnect();
-        if(res == null) return null;
-        if(res.exitCode == 0 && !res.outString.contains("empty")) SmartDialog.showToast("连接成功！");
-        await Future.delayed(const Duration(seconds: 1));
-        _getDevicesInfo();
+        if(res.exitCode != CommandResultCode.defaultCode){
+          state.results.add(res);
+          if(res.isSuccess && !res.outString.contains("empty")) SmartDialog.showToast("连接成功！");
+          await Future.delayed(const Duration(seconds: 1));
+          _getDevicesInfo();
+        }
       case 2: //无线连接设备
         res = await _wifiConnect();
-        if(res?.exitCode == 0) SmartDialog.showToast("连接成功！");
+        if(res.isSuccess) SmartDialog.showToast("连接成功！");
         await Future.delayed(const Duration(seconds: 1));
         _getDevicesInfo();
       case 3: //复制文件到手机
         SmartDialog.show(builder: (_) => CopyFileDialog(deviceName: state.currentDevice.value.name));
       case 4: //安装apk
-        SmartDialog.show(builder: (_)=>
-            DropFileDialog(onSave: (isCopy,path)async{
-              print("isCopy : $isCopy,path : $path");
-              SmartDialog.dismiss(status: SmartStatus.dialog);
-              SmartDialog.showLoading(msg: "安装中...");
-              state.currentResult.value = await CommandUtils.runAdbOfDevice(["install",path], state.currentDevice.value.name);
-              state.currentResult.refresh();
-              SmartDialog.dismiss(status: SmartStatus.loading);
-              },
-              onInstallOpen: (isCopy,path)async{
-                print("isCopy : $isCopy,path : $path");
-                SmartDialog.dismiss(status: SmartStatus.dialog);
-                SmartDialog.showLoading(msg: "安装中...");
-                final res = await CommandUtils.runAdbOfDevice(["install",path], state.currentDevice.value.name);
-                SmartDialog.dismiss(status: SmartStatus.loading);
-                if(res.outString.contains("Success")){
-                  print("install success");
-                  var apkInfo = await CommandUtils.getApkInfo(path);
-                  print("apkInfo $apkInfo");
-                  state.currentResult.value = await CommandUtils.launchApplication(state.currentDevice.value.name, apkInfo.packageName!,launchActivityName: apkInfo.launchActivity);
-                }else{
-                  state.currentResult.value = CommandResult(exitCode: 1, outString: "",errorString: "出错",command: "aapt dump badging $path");
-                }
-                state.currentResult.refresh();
-                SmartDialog.dismiss(status: SmartStatus.loading);
-              },
-            )
-        );
+        _installApk();
       case 5: //安装aab
-        res = await SmartDialog.show(builder: (_)=>BuildAabDialog(device: state.currentDevice.value,signInfoList: state.signInfoList));
+        CommandResult? tempRes = await SmartDialog.show(builder: (_)=>BuildAabDialog(device: state.currentDevice.value,signInfoList: state.signInfoList));
+        if(tempRes != null){
+          state.currentResult.value = tempRes;
+          state.results.add(tempRes);
+        }
       case 6: //预设签名信息
-        res = await SmartDialog.show(builder: (_)=>const AddSignInfoDialog());
+        await SmartDialog.show(builder: (_)=>const AddSignInfoDialog());
         _loadSignInfo();
       case 7: //自定义命令
         String cmdStr = "";
@@ -102,21 +84,21 @@ class HomeLogic extends GetxController {
           onTextChanged: (s) => cmdStr = s,
           defaultStr: cmdStr,
         ));
-        if(cmdStr == "") return null;
+        if(cmdStr == "") return CommandResult(exitCode: CommandResultCode.error, outString: "未知命令", command: cmdStr);
         var command = cmdStr.split(' ');
         res = await CommandUtils.runCommand(getAdbPath(), command);
-        
+      // case 8://test
+      //   // var apkInfo = await CommandUtils.getApkInfo(r"D:\note\AracdiaOnetNote\Android提包\0813\apks\aa.apk");
+      //   var asd = await CommandUtils.getApkInfo(r"D:\note\AracdiaOnetNote\Android提包\Arcadia Onet Match_1.2.4(22)_release.apk");
+      //   // print("apkInfo $apkInfo");
+      //   print("asd $asd");
     }
-    if(res != null) {
-      state.currentResult.value = res;
-      state.currentResult.refresh();
-    }
-    return res;
   }
 
-  Future<CommandResult?> _getDevicesInfo()async{
-    CommandResult? res;
+  Future<CommandResult> _getDevicesInfo()async{
+    CommandResult res;
     res = CommandUtils.getDevices();
+    if(!res.isSuccess) return CommandResult(exitCode: CommandResultCode.error, outString: "查找设备命令出错", command: "adb devices");
     _resolveDevices(res);
     _resolveIp();
     // print("isUnknown : ${state.currentDevice.value.isUnknown}");
@@ -185,37 +167,83 @@ class HomeLogic extends GetxController {
     print("sign list: ${state.signInfoList}");
   }
 
-  Future<CommandResult?> _ipConnect()async{
+  Future<CommandResult> _ipConnect()async{
     String connectIp = "";
     String lastIp = state.sp.getString(SPKey.stringIp) ?? "192.168.";
-    await SmartDialog.show(builder: (_)=> TextFieldDialog(
+    await SmartDialog.show(
+        builder: (_)=> TextFieldDialog(
         onTextChanged: (ip)async{
       connectIp = ip;
     },
       defaultStr: lastIp,
     ));
-    if(connectIp == "") return null;
+    if(connectIp == "") return CommandResult.init();
     state.sp.setString(SPKey.stringIp, connectIp);
     return CommandUtils.runCommand(getAdbPath(), ["connect",connectIp]);
   }
 
-  Future<CommandResult?> _wifiConnect()async{
+  Future<CommandResult> _wifiConnect()async{
     CommandResult res;
-    if(state.currentDevice.value.isUnknown) return null;
+    if(state.currentDevice.value.isUnknown) return CommandResult(exitCode: CommandResultCode.error, outString: "未获取到连接状态", command: '');
     if(state.currentDevice.value.ip == null){
       SmartDialog.showToast("ip未知");
-      return null;
+      return CommandResult(exitCode: CommandResultCode.error, outString: "ip未知", command: '');
     }
     res = await CommandUtils.runCommand(getAdbPath(), ["connect",state.currentDevice.value.ip!]);
+    state.results.add(res);
     if(res.outString.contains("cannot connect")){
       print("cannot connect");
       SmartDialog.showToast("默认连接失败，尝试启动adbd重连");
       res = await CommandUtils.runAdbOfDevice(["tcpip","5555"],state.currentDevice.value.name);
+      state.results.add(res);
       print(res);
       res = await CommandUtils.runCommand(getAdbPath(), ["connect",state.currentDevice.value.ip!]);
+      state.results.add(res);
       return res;
     }
-    return null;
+    return CommandResult(exitCode: CommandResultCode.error, outString: "未知错误", command: '');
+  }
+
+  void _installApk()async{
+    CommandResult res;
+    SmartDialog.show(builder: (_)=>
+        DropFileDialog(onSave: (isCopy,path)async{
+          print("isCopy : $isCopy,path : $path");
+          SmartDialog.showLoading(msg: "安装中...");
+          res = await CommandUtils.runAdbOfDevice(["install",path], state.currentDevice.value.name);
+          state.currentResult.value = res;
+          state.results.add(res);
+          state.currentResult.refresh();
+          SmartDialog.dismiss(status: SmartStatus.loading);
+          SmartDialog.dismiss(status: SmartStatus.dialog);
+          if(!state.currentResult.value.isSuccess){
+            SmartDialog.showToast("安装失败");
+          }
+        },
+          onInstallOpen: (isCopy,path)async{
+            print("isCopy : $isCopy,path : $path");
+            SmartDialog.dismiss(status: SmartStatus.dialog);
+            SmartDialog.showLoading(msg: "安装中...");
+            res = await CommandUtils.runAdbOfDevice(["install",path], state.currentDevice.value.name);
+            state.results.add(res);
+            SmartDialog.dismiss(status: SmartStatus.loading);
+            if(res.outString.contains("Success")){
+              print("install success");
+              var apkInfo = await CommandUtils.getApkInfo(path);
+              if(apkInfo == null){
+                res = CommandResult(exitCode: CommandResultCode.error, outString: "",errorString: "出错",command: "aapt dump badging $path");
+              }else{
+                print("apkInfo $apkInfo");
+                res = await CommandUtils.launchApplication(state.currentDevice.value.name, apkInfo.packageName!,launchActivityName: apkInfo.launchActivity);
+              }
+              state.currentResult.value = res;
+              state.results.add(res);
+            }
+            state.currentResult.refresh();
+            SmartDialog.dismiss(status: SmartStatus.loading);
+          },
+        )
+    );
   }
 
 }
