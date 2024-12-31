@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cross_file/cross_file.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:tds_android_util/common/path_util.dart';
@@ -40,7 +41,7 @@ class HomeLogic extends GetxController {
   }
 
   List<String> get menuString => [
-    "获取设备列表", "主动ip无线连接\n（需连接过一次）", "无线连接设备",
+    "获取设备列表", "主动ip无线连接\n（需无线连接过一次）", "无线连接设备",
     "复制文件到手机","安装apk","安装aab",
     "预设签名信息","自定义命令"
     // ,"test"
@@ -204,10 +205,11 @@ class HomeLogic extends GetxController {
     return CommandResult(exitCode: CommandResultCode.error, outString: "未知错误", command: '');
   }
 
-  void _installApk()async{
+   _installApk()async{
     CommandResult res;
     SmartDialog.show(builder: (_)=>
-        DropFileDialog(onSave: (isCopy,path)async{
+        DropFileDialog(
+          onSave: (isCopy,path)async{
           print("isCopy : $isCopy,path : $path");
           SmartDialog.showLoading(msg: "安装中...");
           res = await CommandUtils.runAdbOfDevice(["install",path], state.currentDevice.value.name);
@@ -238,6 +240,35 @@ class HomeLogic extends GetxController {
               }
               state.currentResult.value = res;
               state.results.add(res);
+            }
+            state.currentResult.refresh();
+            SmartDialog.dismiss(status: SmartStatus.loading);
+          },
+          onInstallOpenAndCopy: (isCopy,path) async{
+            print("isCopy : $isCopy,path : $path");
+            SmartDialog.dismiss(status: SmartStatus.dialog);
+            SmartDialog.showLoading(msg: "安装中...");
+            res = await CommandUtils.runAdbOfDevice(["install",path], state.currentDevice.value.name);
+            state.results.add(res);
+            SmartDialog.dismiss(status: SmartStatus.loading);
+            if(res.outString.contains("Success")){
+              print("install success");
+              var apkInfo = await CommandUtils.getApkInfo(path);
+              if(apkInfo == null){
+                res = CommandResult(exitCode: CommandResultCode.error, outString: "",errorString: "出错",command: "aapt dump badging $path");
+              }else{
+                print("apkInfo $apkInfo");
+                res = await CommandUtils.launchApplication(state.currentDevice.value.name, apkInfo.packageName!,launchActivityName: apkInfo.launchActivity);
+              }
+              state.currentResult.value = res;
+              state.results.add(res);
+              res = await CommandUtils.pushFile2APKDirectory(state.currentDevice.value.name, XFile(path));
+              if(res.isSuccess){
+                SmartDialog.showToast("复制成功");
+              }else{
+                SmartDialog.showToast("复制失败");
+              }
+
             }
             state.currentResult.refresh();
             SmartDialog.dismiss(status: SmartStatus.loading);

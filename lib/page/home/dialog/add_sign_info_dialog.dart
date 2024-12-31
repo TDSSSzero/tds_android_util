@@ -95,29 +95,7 @@ class _AddSignInfoDialogState extends State<AddSignInfoDialog> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
-                    onPressed: () {
-                      if (keystoreFile == null ||
-                          keystorePassword == null ||
-                          alias == null ||
-                          password == null) {
-                        SmartDialog.showToast("参数不正确");
-                        return;
-                      }
-                      final data = SignInfo(keystoreFile!.path, alias!,
-                          keystorePassword!, password!, infoName!);
-                      final json = jsonEncode(data.toJson());
-                      print("json : $json");
-                      if (!list.contains(data)) {
-                        list.add(data);
-                        final jsonList =
-                            list.map((e) => jsonEncode(e.toJson())).toList();
-                        sp.setStringList(SPKey.stringSignInfo, jsonList);
-                        SmartDialog.showToast("添加成功");
-                      } else {
-                        SmartDialog.showToast("存在相同签名");
-                      }
-                      setState(() {});
-                    },
+                    onPressed: _onAddInfo,
                     child: const Text("添加预设")),
                 ElevatedButton(
                     onPressed: () {
@@ -158,10 +136,10 @@ class _AddSignInfoDialogState extends State<AddSignInfoDialog> {
             decoration: BoxDecoration(border: Border.all(color: Colors.green)),
             child: Material(
                 child: ListTile(
-              onTap: () => onTapInfo(index),
+              onTap: () => _onTapInfo(index),
               title: Text("预设名：$name 签名别名: ${data.alias}"),
               trailing: IconButton(
-                  onPressed: () => onDeleteInfo(index),
+                  onPressed: () => _onDeleteInfo(index),
                   icon: const Icon(
                     Icons.delete_forever_rounded,
                     color: Colors.red,
@@ -255,7 +233,7 @@ class _AddSignInfoDialogState extends State<AddSignInfoDialog> {
     );
   }
 
-  void onTapInfo(int index) {
+  void _onTapInfo(int index) {
     var data = list[index];
     infoName = data.infoName ?? "";
     alias = data.alias;
@@ -271,7 +249,7 @@ class _AddSignInfoDialogState extends State<AddSignInfoDialog> {
     setState(() {});
   }
 
-  void onDeleteInfo(int index) {
+  void _onDeleteInfo(int index) {
     SmartDialog.show(
       builder: (context) => Container(
         decoration: BoxDecoration(
@@ -318,5 +296,29 @@ class _AddSignInfoDialogState extends State<AddSignInfoDialog> {
         ),
       ),
     );
+  }
+
+  void _onAddInfo(){
+    if (keystoreFile == null ||
+        keystorePassword == null ||
+        alias == null ||
+        password == null) {
+      SmartDialog.showToast("参数不正确");
+      return;
+    }
+    final data = SignInfo(keystoreFile!.path, alias!,
+        keystorePassword!, password!, infoName!);
+    final json = jsonEncode(data.toJson());
+    print("json : $json");
+    if (!list.contains(data)) {
+      list.add(data);
+      final jsonList =
+      list.map((e) => jsonEncode(e.toJson())).toList();
+      sp.setStringList(SPKey.stringSignInfo, jsonList);
+      SmartDialog.showToast("添加成功");
+    } else {
+      SmartDialog.showToast("存在相同签名");
+    }
+    setState(() {});
   }
 }

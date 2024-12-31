@@ -171,7 +171,7 @@ class HomePage extends StatelessWidget {
             borderRadius: const BorderRadius.all(Radius.circular(20)),
             border: Border.all(color: Colors.lightGreen)),
         child: InkWell(
-            mouseCursor: MaterialStateMouseCursor.clickable,
+            mouseCursor: WidgetStateMouseCursor.clickable,
             onTap: () => logic.menuLogic(index),
             child: Center(child: Text(logic.menuString[index],textAlign: TextAlign.center))),
       );

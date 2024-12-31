@@ -9,8 +9,9 @@ class DropFileDialog extends StatefulWidget {
 
   final TwiceCallback<bool,String> onSave;
   final TwiceCallback<bool,String> onInstallOpen;
+  final TwiceCallback<bool,String>? onInstallOpenAndCopy;
 
-  const DropFileDialog({super.key,required this.onSave,required this.onInstallOpen});
+  const DropFileDialog({super.key,required this.onSave,required this.onInstallOpen, this.onInstallOpenAndCopy});
 
   @override
   State<DropFileDialog> createState() => _DropFileDialogState();
@@ -131,6 +132,9 @@ class _DropFileDialogState extends State<DropFileDialog> {
                 ElevatedButton(
                     onPressed: selectedIndex == -1 ? null :()=>widget.onInstallOpen(_isCopy,_list[selectedIndex].path),
                     child: const Text("安装并打开")),
+                ElevatedButton(
+                    onPressed: selectedIndex == -1 && widget.onInstallOpenAndCopy != null ? null :()=>widget.onInstallOpenAndCopy!(_isCopy,_list[selectedIndex].path),
+                    child: const Text("安装打开并复制")),
               ],
             )
           ],

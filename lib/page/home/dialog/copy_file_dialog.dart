@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:tds_android_util/page/home/dialog/copy_detail_dialog.dart';
+import 'package:tds_android_util/widget/dialog_base.dart';
 
 class CopyFileDialog extends StatefulWidget {
 
@@ -41,13 +42,8 @@ class _CopyFileDialogState extends State<CopyFileDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-        width: 600,
-        height: 600,
-        alignment: Alignment.center,
-        color: Colors.white,
-        child:
-        Column(
+    return DialogBase(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(onPressed: ()async{

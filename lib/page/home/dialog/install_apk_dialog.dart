@@ -59,7 +59,7 @@ class _InstallApkDialogState extends State<InstallApkDialog> {
           }
           widget.onInstallOpen(resList);
           SmartDialog.dismiss(status: SmartStatus.loading);
-
-        });
+        },
+    );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cross_file/cross_file.dart';
 import 'package:tds_android_util/common/path_util.dart';
 import 'package:tds_android_util/common/regex_util.dart';
 import 'package:tds_android_util/model/apk_info.dart';
@@ -99,6 +100,10 @@ abstract class CommandUtils {
   static Future<CommandResult> launchApplication(String deviceName,String packageName,{String? launchActivityName}){
     launchActivityName ??= ".MainActivity";
     return runAdbOfDevice(["shell","am","start","$packageName/$launchActivityName"], deviceName);
+  }
+
+  static Future<CommandResult> pushFile2APKDirectory(String deviceName,XFile file){
+    return runAdbOfDevice(["push",file.path,"/sdcard/APK/${file.name}"], deviceName);
   }
 
 }
