@@ -5,6 +5,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:tds_android_util/common/path_util.dart';
 import 'package:tds_android_util/model/android_device.dart';
+import 'package:tds_android_util/model/home_menu.dart';
 import 'package:tds_android_util/page/home/dialog/add_sign_info_dialog.dart';
 import 'package:tds_android_util/page/home/dialog/build_aab_dialog.dart';
 import 'package:tds_android_util/page/home/dialog/copy_file_dialog.dart';
@@ -14,12 +15,15 @@ import 'package:tds_android_util/page/home/text_field_dialog.dart';
 import '../../common/command_util.dart';
 import '../../common/regex_util.dart';
 import '../../common/sp_key.dart';
+import '../../function.dart';
 import '../../model/command_result.dart';
 import '../../model/sign_info.dart';
 import 'home_state.dart';
 
 class HomeLogic extends GetxController {
   final HomeState state = HomeState();
+
+  List<HomeMenu> menu = [];
 
   bool get isHaveSelectedDevice {
     for(var d in state.devices){
@@ -30,6 +34,7 @@ class HomeLogic extends GetxController {
 
   @override
   void onReady() {
+    _initMenu();
     _loadSignInfo();
     super.onReady();
   }
@@ -40,60 +45,68 @@ class HomeLogic extends GetxController {
     super.onClose();
   }
 
-  List<String> get menuString => [
-    "获取设备列表", "主动ip无线连接\n（需无线连接过一次）", "无线连接设备",
-    "复制文件到手机","安装apk","安装aab",
-    "预设签名信息","自定义命令"
-    // ,"test"
-  ];
-  menuLogic(int index)async {
-    CommandResult res;
-    switch (index) {
-      case 0 : //获取设备列表
-        res = await _getDevicesInfo();
+
+  void _initMenu(){
+    menu = [
+      HomeMenu("获取设备列表", () async{
+        var res = await _getDevicesInfo();
         state.currentResult.value = res;
         state.results.add(res);
-      case 1: //手动无线连接
-        res = await _ipConnect();
+      }),
+      HomeMenu("主动ip无线连接\n（需无线连接过一次）", () async{
+        var res = await _ipConnect();
         if(res.exitCode != CommandResultCode.defaultCode){
           state.results.add(res);
           if(res.isSuccess && !res.outString.contains("empty")) SmartDialog.showToast("连接成功！");
           await Future.delayed(const Duration(seconds: 1));
           _getDevicesInfo();
         }
-      case 2: //无线连接设备
-        res = await _wifiConnect();
-        if(res.isSuccess) SmartDialog.showToast("连接成功！");
+      }),
+      HomeMenu("无线连接设备", () async {
+        var res = await _wifiConnect();
+        if (res.isSuccess) {
+          SmartDialog.showToast("连接成功！");
+        }
         await Future.delayed(const Duration(seconds: 1));
-        _getDevicesInfo();
-      case 3: //复制文件到手机
+        await _getDevicesInfo();
+      },true),
+      HomeMenu("复制文件到手机", () {
         SmartDialog.show(builder: (_) => CopyFileDialog(deviceName: state.currentDevice.value.name));
-      case 4: //安装apk
-        _installApk();
-      case 5: //安装aab
-        CommandResult? tempRes = await SmartDialog.show(builder: (_)=>BuildAabDialog(device: state.currentDevice.value,signInfoList: state.signInfoList));
-        if(tempRes != null){
+      },true),
+      HomeMenu("复制手机文件\n(仅限apk文件夹)", () {
+        SmartDialog.show(builder: (_) => CopyFileDialog(deviceName: state.currentDevice.value.name));
+      },true),
+      HomeMenu("安装apk", () async {
+        await _installApk();
+      },true),
+      HomeMenu("安装aab", () async {
+        CommandResult? tempRes = await SmartDialog.show(
+          builder: (_) => BuildAabDialog(device: state.currentDevice.value, signInfoList: state.signInfoList),
+        );
+        if (tempRes != null) {
           state.currentResult.value = tempRes;
           state.results.add(tempRes);
         }
-      case 6: //预设签名信息
-        await SmartDialog.show(builder: (_)=>const AddSignInfoDialog());
+      },true),
+      HomeMenu("预设签名信息", () async {
+        await SmartDialog.show(builder: (_) => const AddSignInfoDialog());
         _loadSignInfo();
-      case 7: //自定义命令
+      }),
+      HomeMenu("自定义命令", () async {
         String cmdStr = "";
-        await SmartDialog.show(builder: (_)=> TextFieldDialog(
-          onTextChanged: (s) => cmdStr = s,
-          defaultStr: cmdStr,
-        ));
-        if(cmdStr == "") return CommandResult(exitCode: CommandResultCode.error, outString: "未知命令", command: cmdStr);
+        await SmartDialog.show(
+          builder: (_) => TextFieldDialog(
+            onTextChanged: (s) => cmdStr = s,
+            defaultStr: cmdStr,
+          ),
+        );
+        if (cmdStr == "") {
+          return CommandResult(exitCode: CommandResultCode.error, outString: "未知命令", command: cmdStr);
+        }
         var command = cmdStr.split(' ');
-        res = await CommandUtils.runCommand(getAdbPath(), command);
-      // case 8://test
-      //   // var apkInfo = await CommandUtils.getApkInfo(r"D:\note\AracdiaOnetNote\Android提包\0813\apks\aa.apk");
-      //   var asd = await CommandUtils.getApkInfo(r"D:\note\AracdiaOnetNote\Android提包\Arcadia Onet Match_1.2.4(22)_release.apk");
-      //   // print("apkInfo $apkInfo");
-      //   print("asd $asd");
-    }
+        var res = await CommandUtils.runCommand("", command);
+      }),
+    ];
   }
 
   Future<CommandResult> _getDevicesInfo()async{

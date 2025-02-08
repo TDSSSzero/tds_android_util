@@ -15,11 +15,15 @@ abstract class CommandUtils {
 
   static const getDeviceModel = ["shell","getprop","ro.product.model"];
   static const getDeviceMarketName = ["shell","getprop","ro.product.marketname"];
+  static const adb = "adb";
+  static const pull = "pull";
+  static const push = "push";
+  static const devices = "devices";
 
   ///获取当前adb连接的所有设备
   static CommandResult getDevices(){
     var result = Process.runSync(getAdbPath(), ['devices']);
-    var cr = CommandResult.fromResult(result,"adb devices");
+    var cr = CommandResult.fromResult(result,"$adb $devices");
     print('result: $cr');
     return cr;
   }
@@ -104,6 +108,10 @@ abstract class CommandUtils {
 
   static Future<CommandResult> pushFile2APKDirectory(String deviceName,XFile file){
     return runAdbOfDevice(["push",file.path,"/sdcard/APK/${file.name}"], deviceName);
+  }
+
+  static Future<CommandResult> getDirAPKFileNameList(String deviceName){
+    return runAdbOfDevice(["shell","ls","/sdcard/apk"], deviceName);
   }
 
 }

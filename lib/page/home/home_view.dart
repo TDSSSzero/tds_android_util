@@ -64,8 +64,9 @@ class HomePage extends StatelessWidget {
                                         crossAxisSpacing: 50,
                                         mainAxisSpacing: 15),
                                 itemBuilder: _buildMenuItem,
-                                itemCount: logic.menuString.length,
-                              ))),
+                                itemCount: logic.menu.length,
+                              )
+                          )),
                     ],
                   ),
                 ),
@@ -165,15 +166,16 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildMenuItem(BuildContext context, int index) {
-    if (index == 0 || index == 1 || index == 6 || index == 7) {
+    if (!logic.menu[index].isNeedDevice) {
       return Container(
         decoration: BoxDecoration(
             borderRadius: const BorderRadius.all(Radius.circular(20)),
             border: Border.all(color: Colors.lightGreen)),
         child: InkWell(
             mouseCursor: WidgetStateMouseCursor.clickable,
-            onTap: () => logic.menuLogic(index),
-            child: Center(child: Text(logic.menuString[index],textAlign: TextAlign.center))),
+            // onTap: () => logic.menuLogic(index),
+            onTap: logic.menu[index].func,
+            child: Center(child: Text(logic.menu[index].name,textAlign: TextAlign.center))),
       );
     } else {
       return _buildDeviceItem(index);
@@ -183,19 +185,18 @@ class HomePage extends StatelessWidget {
   Widget _buildDeviceItem(int index) {
     return Obx(() {
       return InkWell(
-        mouseCursor: MaterialStateMouseCursor.clickable,
+        mouseCursor: WidgetStateMouseCursor.clickable,
         onTap: state.currentDevice.value.isUnknown
             ? null
-            : () => logic.menuLogic(index),
+            : logic.menu[index].func,
         child: Container(
-          // padding: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(
               borderRadius: const BorderRadius.all(Radius.circular(20)),
               border: Border.all(
                   color: state.currentDevice.value.isUnknown
                       ? Colors.black26
                       : Colors.lightBlue)),
-          child: Center(child: Text(logic.menuString[index])),
+          child: Center(child: Text(logic.menu[index].name)),
         ),
       );
     });
