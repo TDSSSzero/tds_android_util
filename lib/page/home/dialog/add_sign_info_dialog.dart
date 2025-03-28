@@ -50,62 +50,81 @@ class _AddSignInfoDialogState extends State<AddSignInfoDialog> {
   @override
   Widget build(BuildContext context) {
     return DialogBase(
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            const Text("已经添加的预设，点击垃圾桶icon可以删除",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            _buildInfoList(),
-            const Divider(),
-            _buildRow(
-                "预设名称：    ",
-                TextField(
-                    controller: nameCtrl,
-                    onChanged: (s) {
-                      infoName = s;
-                      setState(() {});
-                    })),
-            _buildRow("签名文件：", _buildOneDrag("keystore"), height: 120),
-            _buildRow(
-                "签名文件密码(KeyStorePsd)：",
-                TextField(
-                    controller: kspCtrl,
-                    onChanged: (s) {
-                      keystorePassword = s;
-                      setState(() {});
-                    })),
-            _buildRow(
-                "签名别名(KeyAlias)：            ",
-                TextField(
-                    controller: aliasCtrl,
-                    onChanged: (s) {
-                      alias = s;
-                      setState(() {});
-                    })),
-            _buildRow(
-                "签名密码(KeyPassword)：    ",
-                TextField(
-                    controller: kpCtrl,
-                    onChanged: (s) {
-                      password = s;
-                      setState(() {});
-                    })),
-            const SizedBox(height: 10),
-            Row(
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
-                    onPressed: _onAddInfo,
-                    child: const Text("添加预设")),
-                ElevatedButton(
-                    onPressed: () {
-                      SmartDialog.dismiss();
-                    },
-                    child: const Text("关闭")),
+                const Text("已经添加的预设，点击垃圾桶icon可以删除",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                _buildInfoList(),
+
               ],
-            )
-          ],
-        ),
+            ),
+          ),
+          const VerticalDivider(),
+          Expanded(
+            flex: 3,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildRow(
+                      "预设名称：    ",
+                      TextField(
+                          controller: nameCtrl,
+                          onChanged: (s) {
+                            infoName = s;
+                            setState(() {});
+                          })),
+                  const SizedBox(height: 10),
+                  _buildRow("签名文件：", _buildOneDrag("keystore"), height: 120),
+                  const SizedBox(height: 10),
+                  _buildRow(
+                      "签名文件密码(KeyStorePsd)：",
+                      TextField(
+                          controller: kspCtrl,
+                          onChanged: (s) {
+                            keystorePassword = s;
+                            setState(() {});
+                          })),
+                  const SizedBox(height: 10),
+                  _buildRow(
+                      "签名别名(KeyAlias)：            ",
+                      TextField(
+                          controller: aliasCtrl,
+                          onChanged: (s) {
+                            alias = s;
+                            setState(() {});
+                          })),
+                  const SizedBox(height: 10),
+                  _buildRow(
+                      "签名密码(KeyPassword)：    ",
+                      TextField(
+                          controller: kpCtrl,
+                          onChanged: (s) {
+                            password = s;
+                            setState(() {});
+                          })),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                          onPressed: _onAddInfo,
+                          child: const Text("添加预设")),
+                      ElevatedButton(
+                          onPressed: () {
+                            SmartDialog.dismiss();
+                          },
+                          child: const Text("关闭")),
+                    ],
+                  )
+                ],
+              )
+          ),
+        ],
       ),
     );
   }
@@ -115,8 +134,9 @@ class _AddSignInfoDialogState extends State<AddSignInfoDialog> {
     if (list.isNotEmpty) {
       return Container(
         alignment: Alignment.center,
-        height: 150,
+        // height: 150,
         child: ListView(
+          shrinkWrap: true,
           children: List.generate(list.length, _buildInfoItem),
         ),
       );
@@ -131,21 +151,18 @@ class _AddSignInfoDialogState extends State<AddSignInfoDialog> {
       builder: (context, constraints) {
         return Padding(
           padding: EdgeInsets.symmetric(
-              vertical: 5, horizontal: constraints.maxWidth * 0.2),
-          child: Container(
-            decoration: BoxDecoration(border: Border.all(color: Colors.green)),
-            child: Material(
-                child: ListTile(
-              onTap: () => _onTapInfo(index),
-              title: Text("预设名：$name 签名别名: ${data.alias}"),
-              trailing: IconButton(
-                  onPressed: () => _onDeleteInfo(index),
-                  icon: const Icon(
-                    Icons.delete_forever_rounded,
-                    color: Colors.red,
-                  )),
-            )),
-          ),
+              vertical: 5, horizontal: constraints.maxWidth * 0.1),
+          child: Material(
+              child: ListTile(
+            onTap: () => _onTapInfo(index),
+            title: Text("预设名：$name 签名别名: ${data.alias}"),
+            trailing: IconButton(
+                onPressed: () => _onDeleteInfo(index),
+                icon: const Icon(
+                  Icons.delete_forever_rounded,
+                  color: Colors.red,
+                )),
+          )),
         );
       },
     );
@@ -159,8 +176,8 @@ class _AddSignInfoDialogState extends State<AddSignInfoDialog> {
         SizedBox(width: 300,child: Text(text,style: const TextStyle(fontSize: 18),)),
         Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            width: width ?? 300,
+            // padding: const EdgeInsets.symmetric(vertical: 10),
+            width: width ?? 200,
             height: height,
             child: child)
       ],

@@ -5,16 +5,21 @@ class DialogBase extends StatelessWidget {
 
   final Widget child;
   final AlignmentGeometry? align;
+  final double? width;
+  final double? height;
 
-  const DialogBase({super.key,required this.child,this.align});
+  const DialogBase({super.key,required this.child,this.align,this.width,this.height});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-        width: context.dialogWidth,
-        height: context.dialogHeight,
+        width: width ?? context.dialogWidth,
+        height: height ?? context.dialogHeight,
         alignment: align ?? Alignment.center,
-        color: Colors.white,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20)
+        ),
         child: child
     );
   }

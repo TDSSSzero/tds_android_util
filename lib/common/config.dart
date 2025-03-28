@@ -3,5 +3,5 @@
 final class Config {
   Config._();
 
-  static const version = "0.0.4";
+  static const version = "0.0.5";
 }

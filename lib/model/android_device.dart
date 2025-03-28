@@ -4,6 +4,7 @@ class AndroidDevice {
   String? ip;
   String? model;
   String? marketName;
+  String? brand;
   bool isSelected;
   bool isWifiConnected;
 

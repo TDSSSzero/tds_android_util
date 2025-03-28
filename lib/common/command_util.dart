@@ -13,6 +13,7 @@ import 'package:path/path.dart' as p;
 /// author TDSSS
 abstract class CommandUtils {
 
+  static const getDeviceBrand = ["shell","getprop","ro.product.brand"];
   static const getDeviceModel = ["shell","getprop","ro.product.model"];
   static const getDeviceMarketName = ["shell","getprop","ro.product.marketname"];
   static const adb = "adb";
@@ -25,6 +26,12 @@ abstract class CommandUtils {
     var result = Process.runSync(getAdbPath(), ['devices']);
     var cr = CommandResult.fromResult(result,"$adb $devices");
     print('result: $cr');
+    if (!cr.isSuccess) {
+      return CommandResult(
+          exitCode: CommandResultCode.error,
+          outString: "查找设备命令出错",
+          command: "adb devices");
+    }
     return cr;
   }
 
@@ -37,14 +44,14 @@ abstract class CommandUtils {
   static Future<CommandResult> runCommandOfDevice(String target,List<String> command,String deviceName)async{
     var list = ["-s",deviceName];
     list.addAll(command);
-    var result = await Process.run(target, list);
+    var result = await Process.run(target, list,stdoutEncoding: utf8);
     // print("command : $target $command, result: ${CommandResult.fromResult(result)}");
     return CommandResult.fromResult(result,"$target $command");
   }
   static Future<CommandResult> runAdbOfDevice(List<String> command,String deviceName)async{
     var list = ["-s",deviceName];
     list.addAll(command);
-    var result = await Process.run(getAdbPath(), list);
+    var result = await Process.run(getAdbPath(), list,stdoutEncoding: utf8);
     StringBuffer commandStr = StringBuffer();
     commandStr.writeAll(list," ");
     CommandResult commandResult = CommandResult.fromResult(result,"adb $commandStr");
@@ -110,8 +117,19 @@ abstract class CommandUtils {
     return runAdbOfDevice(["push",file.path,"/sdcard/APK/${file.name}"], deviceName);
   }
 
+  static Future<CommandResult> pullFile2Directory(String deviceName,String fileName,String savePath){
+    final path = "\\sdcard\\apk\\$fileName";
+    savePath = savePath.replaceAll('\n', '');
+    print("command pull copy $path to $savePath");
+    return runAdbOfDevice(["pull",path,savePath], deviceName);
+  }
+
   static Future<CommandResult> getDirAPKFileNameList(String deviceName){
     return runAdbOfDevice(["shell","ls","/sdcard/apk"], deviceName);
+  }
+
+  static Future<CommandResult> clearAppData(String package,String deviceName){
+    return runAdbOfDevice(["shell","pm","clear",package], deviceName);
   }
 
 }

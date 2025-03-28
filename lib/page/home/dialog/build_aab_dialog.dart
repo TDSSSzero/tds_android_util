@@ -52,6 +52,7 @@ class _BuildAabDialogState extends State<BuildAabDialog> {
   Widget build(BuildContext context) {
     print("signInfoList.isNotEmpty : ${widget.signInfoList.isNotEmpty}");
     return DialogBase(
+      height: MediaQuery.sizeOf(context).height - 20,
         child: ListView(
           children: [
             _buildRow("预设", DropdownMenu<int>(
@@ -98,8 +99,14 @@ class _BuildAabDialogState extends State<BuildAabDialog> {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: const Text("构建apks存储在aab相同路径下")
             ),
-            _buildButton(onPressed: isHaveFile ? _onBuildApks : null,msg: "构建apks"),
-            _buildButton(onPressed: isHaveFile ? _buildAndInstall : null,msg: "构建apks并安装"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildButton(onPressed: isHaveFile ? _onBuildApks : null,msg: "构建apks"),
+                const SizedBox(width: 50),
+                _buildButton(onPressed: isHaveFile ? _buildAndInstall : null,msg: "构建apks并安装"),
+              ],
+            ),
             const Center(child: Text("↓↓↓↓↓↓↓↓↓↓↓↓ 单独安装apks看下方 ↓↓↓↓↓↓↓↓↓↓↓↓")),
             _buildRow("apks文件：", _buildOneDrag("apks", _apksFileList,isCustomType: true),height: 150),
             _buildButton(onPressed: _apksFileList.isNotEmpty ? _installApks : null,msg: "安装apks"),
@@ -109,9 +116,11 @@ class _BuildAabDialogState extends State<BuildAabDialog> {
 
   Widget _buildRow(String text,Widget child,{required double height,double? width}){
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(text),
+        const SizedBox(width: 50),
         Container(alignment: Alignment.center,width: width ?? 300,height: height,child: child)
       ],
     );
