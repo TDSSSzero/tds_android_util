@@ -1,7 +1,7 @@
 # TDS Android Util
 
 <p align="center">
-  <img src="./doc/screen.home_page.png" width="600">
+  <img src="./doc/screen/home_page.png" width="600">
 </p>
 
 ## 📱 项目简介
@@ -26,11 +26,11 @@ TDS Android Util 是一款使用 Flutter 开发的 Windows 桌面应用程序，
 ## 📸 界面展示
 
 <p align="center">
-  <img src="./doc/screen.install_apk.png" width="300">
-  <img src="./doc/screen.sign_info.png" width="300">
+  <img src="./doc/screen/install_apk.png" width="300">
+  <img src="./doc/screen/sign_info.png" width="300">
 </p>
 <p align="center">
-  <img src="./doc/screen.install_aab.png" width="300">
+  <img src="./doc/screen/install_aab.png" width="300">
 </p>
 
 ## 🔧 环境要求
